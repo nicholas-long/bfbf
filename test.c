@@ -3,7 +3,32 @@
 #include <math.h>
 #include "bloom.h"
 
-int main(){
+int addhashes();
+int helpmenu();
+int queryhashes();
+
+int helpmenu(){
+    printf("BFBF Help\n");
+    printf("  -a   Add items from stdin\n");
+    printf("  -q   Query items from stdin. Return Y/N\n");
+    printf("  -h   This help\n");
+    return 2;
+}
+
+int main(int argc, char** argv){
+  if (argc < 2){
+    printf("Usage %s [ -a | -q | -h ]\n", argv[0]);
+    return 1;
+  }
+  switch (argv[1][1]){
+    case 'h': return helpmenu();
+    case 'a': return addhashes();
+    case 'q': return queryhashes();
+    default: return 1;
+  }
+}
+
+int addhashes(){
   BloomFilter bf;
   /*  elements = 10;
       false positive rate = 5% */
@@ -23,3 +48,6 @@ int main(){
   bloom_filter_destroy(&bf);
 }
 
+int queryhashes(){
+  return 0;
+}

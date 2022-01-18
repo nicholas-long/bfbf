@@ -7,6 +7,13 @@
 #define DATA_SIZE 16
 #define DATA_SIZE_CHAR 32
 
+struct Bloomindex {
+  void* arr[16];
+  int terminal;
+};
+
+struct Bloomindex* g_pBloomIndexRoot;
+
 int addhashes();
 int helpmenu();
 int queryhashes();
@@ -30,6 +37,26 @@ int main(int argc, char** argv){
     case 'q': return queryhashes();
     default: return 1;
   }
+}
+
+struct Bloomindex* new_one(){
+  return (struct Bloomindex*)malloc(sizeof(struct Bloomindex));
+}
+
+void init(){
+  struct Bloomindex* bi = new_one();
+  for (int i = 0; i < 16; i++){
+    bi->arr[i] = new_one();
+    for (int j = 0; j < 16; j++){
+      struct Bloomindex* ind = new_one();
+      ((struct Bloomindex*)bi->arr[i])->arr[j] = ind;
+      for (int z = 0; z < 16; z++){
+        BloomFilter* temp = (BloomFilter*)malloc(sizeof(BloomFilter));
+        ind->arr[z] = temp;
+      }
+    }
+  }
+  g_pBloomIndexRoot = bi;
 }
 
 int addhashes(){

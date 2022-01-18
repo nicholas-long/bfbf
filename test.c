@@ -6,77 +6,131 @@
 
 #define DATA_SIZE 16
 #define DATA_SIZE_CHAR 32
-
-struct Bloomindex {
-  void* arr[16];
-  int terminal;
-};
-
-struct Bloomindex* g_pBloomIndexRoot;
+#define START_TEXT_PARTITION_OFFSET 0
+#define ESTIMATED_ELEMENTS 1000000u
+#define CHARSET "0123456789abcdef"
 
 int addhashes();
 int helpmenu();
 int queryhashes();
+int unhex(char digit);
+int init();
+BloomFilter* get_filter_for(const char * text);
+uint64_t* hashfunction_simple_bytes(int num_hashes, const char *bytes);
+size_t getlinehex(char* hexdata, char* line);
 
 int helpmenu(){
     printf("BFBF Help\n");
+    printf("Must run with -i to initialize before use\n");
     printf("  -a   Add items from stdin\n");
     printf("  -q   Query items from stdin. Return Y/N\n");
+    printf("  -i   Initialize first time\n");
     printf("  -h   This help\n");
     return 2;
 }
 
 int main(int argc, char** argv){
   if (argc < 2){
-    printf("Usage %s [ -a | -q | -h ]\n", argv[0]);
+    printf("Usage %s [ -a | -q | -i | -h ]\n", argv[0]);
     return 1;
   }
+  init();
   switch (argv[1][1]){
     case 'h': return helpmenu();
     case 'a': return addhashes();
     case 'q': return queryhashes();
+    case 'i': return init();
     default: return 1;
   }
 }
 
-struct Bloomindex* new_one(){
-  return (struct Bloomindex*)malloc(sizeof(struct Bloomindex));
+size_t getlinehex(char* hexdata, char* line){
+  size_t length = strlen(line) - 1;
+  // printf("Length %u\n", (uint32_t)length);
+  for (size_t i = 0; i < length; i += 2){
+    // printf("Chars %c %c\n", line[i], line[i + 1]);
+    hexdata[i / 2] = (unhex(line[i]) << 4) + unhex(line[i + 1]);
+    // printf("%x\n", (unsigned char)hexdata[i/2]);
+  }
+  return length / 2;
 }
 
-void init(){
-  struct Bloomindex* bi = new_one();
+// This hash function returns a set of hashes from the bytes passed in 'bytes'.
+// Therefore, it should really only be used for things that are hashes.
+uint64_t* hashfunction_simple_bytes(int num_hashes, const char *bytes){
+  uint64_t* hashes = malloc(sizeof(uint64_t) * num_hashes);
+  int n = 0;
+  for (int i = (int)(DATA_SIZE - sizeof(uint64_t)); i >= 0; i--){
+    // convert the bytes at this postion directly into a hash
+    hashes[n++] = *(uint64_t*)(bytes + i); 
+  }
+  return hashes;
+}
+
+BloomFilter* get_filter_for(const char * text){
+  BloomFilter* filt = (BloomFilter*)malloc(sizeof(BloomFilter));
+  char filename[100];
+  sprintf(filename, "data/%c%c", text[0], text[1]);
+  bloom_filter_import_alt(filt, filename, &hashfunction_simple_bytes);
+  return filt;
+}
+
+int init(){
+  const char * charset = CHARSET;
   for (int i = 0; i < 16; i++){
-    bi->arr[i] = new_one();
     for (int j = 0; j < 16; j++){
-      struct Bloomindex* ind = new_one();
-      ((struct Bloomindex*)bi->arr[i])->arr[j] = ind;
-      for (int z = 0; z < 16; z++){
-        BloomFilter* temp = (BloomFilter*)malloc(sizeof(BloomFilter));
-        ind->arr[z] = temp;
-      }
+      char filename[100];
+      sprintf(filename, "data/%c%c", charset[i], charset[j]);
+      BloomFilter* filt = (BloomFilter*)malloc(sizeof(BloomFilter));
+      bloom_filter_init_on_disk_alt(filt, ESTIMATED_ELEMENTS, 0.05f, filename, &hashfunction_simple_bytes);
     }
   }
-  g_pBloomIndexRoot = bi;
+  return 0;
 }
 
 int addhashes(){
-  BloomFilter bf;
-  /*  elements = 10;
-      false positive rate = 5% */
-  bloom_filter_init(&bf, 10, 0.05);
-  bloom_filter_add_string(&bf, "test");
-  if (bloom_filter_check_string(&bf, "test") == BLOOM_FAILURE) {
-      printf("'test' is not in the Bloom Filter\n");
-  } else {
-      printf("'test' is in the Bloom Filter\n");
+  char hexdata[32];
+  char *line = NULL;
+  size_t len = 0;
+  ssize_t nread;
+  while ((nread = getline(&line, &len, stdin)) != -1) {
+    getlinehex(hexdata, line);
+    BloomFilter* bf = get_filter_for(line);
+    bloom_filter_add_string(bf, hexdata);
+    // saving is handled by this library
+    free(bf);
   }
-  if (bloom_filter_check_string(&bf, "blah") == BLOOM_FAILURE) {
-      printf("'blah' is not in the Bloom Filter!\n");
-  } else {
-      printf("'blah' is in th Bloom Filter\n");
+  // bloom_filter_add_string(&bf, "test");
+  // if (bloom_filter_check_string(&bf, "test") == BLOOM_FAILURE) {
+      // printf("'test' is not in the Bloom Filter\n");
+  // } else {
+      // printf("'test' is in the Bloom Filter\n");
+  // }
+  // bloom_filter_stats(&bf);
+  // bloom_filter_destroy(&bf);
+}
+
+int queryhashes(){
+  char hexdata[32];
+  char *line = NULL;
+  size_t len = 0;
+  ssize_t nread;
+  while ((nread = getline(&line, &len, stdin)) != -1) {
+    getlinehex(hexdata, line);
+    BloomFilter* bf = get_filter_for(line);
+    if (bloom_filter_check_string(bf, line) == BLOOM_FAILURE){
+      puts("N\n");
+    } else {
+      puts("Y\n");
+    }
+    free(bf);
+    // uint64_t* hashes = hashfunction_simple_bytes(9, hexdata);
+    // for (int n = 0; n < 9; n++){
+      // printf("%p\n", (void*)hashes[n]);
+    // }
+    // nread = length; //
   }
-  bloom_filter_stats(&bf);
-  bloom_filter_destroy(&bf);
+  return 0;
 }
 
 int unhex(char digit){
@@ -107,43 +161,4 @@ int unhex(char digit){
     case 'F':
       return digit - 'A' + 10;
   }
-}
-
-size_t getlinehex(char* hexdata, char* line){
-  size_t length = strlen(line) - 1;
-  // printf("Length %u\n", (uint32_t)length);
-  for (size_t i = 0; i < length; i += 2){
-    // printf("Chars %c %c\n", line[i], line[i + 1]);
-    hexdata[i / 2] = (unhex(line[i]) << 4) + unhex(line[i + 1]);
-    // printf("%x\n", (unsigned char)hexdata[i/2]);
-  }
-  return length / 2;
-}
-
-// This hash function returns a set of hashes from the bytes passed in 'bytes'.
-// Therefore, it should really only be used for things that are hashes.
-uint64_t* hashfunction_simple_bytes(int num_hashes, const char *bytes){
-  uint64_t* hashes = malloc(sizeof(uint64_t) * num_hashes);
-  int n = 0;
-  for (int i = (int)(DATA_SIZE - sizeof(uint64_t)); i >= 0; i--){
-    // convert the bytes at this postion directly into a hash
-    hashes[n++] = *(uint64_t*)(bytes + i); 
-  }
-  return hashes;
-}
-
-int queryhashes(){
-  char hexdata[32];
-  char *line = NULL;
-  size_t len = 0;
-  ssize_t nread;
-  while ((nread = getline(&line, &len, stdin)) != -1) {
-    size_t length = getlinehex(hexdata, line);
-    uint64_t* hashes = hashfunction_simple_bytes(9, hexdata);
-    for (int n = 0; n < 9; n++){
-      printf("%p\n", (void*)hashes[n]);
-    }
-    nread = length; //
-  }
-  return 0;
 }

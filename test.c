@@ -34,7 +34,6 @@ int main(int argc, char** argv){
     printf("Usage %s [ -a | -q | -i | -h ]\n", argv[0]);
     return 1;
   }
-  init();
   switch (argv[1][1]){
     case 'h': return helpmenu();
     case 'a': return addhashes();
@@ -64,6 +63,9 @@ uint64_t* hashfunction_simple_bytes(int num_hashes, const char *bytes){
     // convert the bytes at this postion directly into a hash
     hashes[n++] = *(uint64_t*)(bytes + i); 
   }
+  // for (int i = 0; i < n; i++){
+    // printf("%p\n", (void*)hashes[i]);
+  // }
   return hashes;
 }
 
@@ -71,7 +73,8 @@ BloomFilter* get_filter_for(const char * text){
   BloomFilter* filt = (BloomFilter*)malloc(sizeof(BloomFilter));
   char filename[100];
   sprintf(filename, "data/%c%c", text[0], text[1]);
-  bloom_filter_import_alt(filt, filename, &hashfunction_simple_bytes);
+  // printf("File name %s\n", filename);
+  bloom_filter_import_on_disk_alt(filt, filename, &hashfunction_simple_bytes);
   return filt;
 }
 
@@ -118,7 +121,7 @@ int queryhashes(){
   while ((nread = getline(&line, &len, stdin)) != -1) {
     getlinehex(hexdata, line);
     BloomFilter* bf = get_filter_for(line);
-    if (bloom_filter_check_string(bf, line) == BLOOM_FAILURE){
+    if (bloom_filter_check_string(bf, hexdata) == BLOOM_FAILURE){
       puts("N\n");
     } else {
       puts("Y\n");

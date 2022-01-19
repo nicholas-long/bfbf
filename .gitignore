@@ -2,6 +2,7 @@ bloom
 tags
 testbloom
 bfbf
+data/*
 
 # Prerequisites
 *.d

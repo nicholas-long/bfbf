@@ -1,11 +1,15 @@
+// PARAMETERIZED BUILD
+// #ifndef DATA_SIZE_CHAR
+// #define DATA_SIZE_CHAR 32
+// #endif
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <math.h>
 #include "bloom/src/bloom.h"
 
-#define DATA_SIZE 16
-#define DATA_SIZE_CHAR 32
+#define DATA_SIZE (DATA_SIZE_CHAR / 2)
 #define START_TEXT_PARTITION_OFFSET 0
 #define ESTIMATED_ELEMENTS 1000000u
 #define CHARSET "0123456789abcdef"
@@ -21,6 +25,7 @@ size_t getlinehex(char* hexdata, char* line);
 
 int helpmenu(){
     printf("BFBF Help\n");
+    printf("Expected hex input size: %d\n", DATA_SIZE_CHAR);
     printf("Must run with -i to initialize before use\n");
     printf("  -a   Add items from stdin\n");
     printf("  -q   Query items from stdin. Return Y/N\n");
@@ -69,7 +74,6 @@ BloomFilter* get_filter_for(const char * text){
   memset(filt, 0, sizeof(BloomFilter));
   char filename[100];
   sprintf(filename, "data/%c%c", charset[unhex(text[START_TEXT_PARTITION_OFFSET])], charset[unhex(text[START_TEXT_PARTITION_OFFSET + 1])]);
-  // printf("File name %s\n", filename);
   bloom_filter_import_on_disk_alt(filt, filename, &hashfunction_simple_bytes);
   return filt;
 }
@@ -89,7 +93,7 @@ int init(){
 }
 
 int addhashes(){
-  char hexdata[32];
+  char hexdata[DATA_SIZE+1];
   char *line = NULL;
   size_t len = 0;
   ssize_t nread;
@@ -104,13 +108,12 @@ int addhashes(){
 }
 
 int queryhashes(){
-  char hexdata[DATA_SIZE_CHAR+1];
+  char hexdata[DATA_SIZE+1];
   char *line = NULL;
   size_t len = 0;
   ssize_t nread;
   while ((nread = getline(&line, &len, stdin)) != -1) {
     getlinehex(hexdata, line);
-    hexdata[DATA_SIZE_CHAR] = 0;
     BloomFilter* bf = get_filter_for(line);
     if (bloom_filter_check_string(bf, hexdata) == BLOOM_FAILURE){
       printf("N\n");

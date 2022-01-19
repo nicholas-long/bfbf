@@ -1,6 +1,7 @@
 bloom
-testdata.lst
 tags
+testbloom
+bfbf
 
 # Prerequisites
 *.d

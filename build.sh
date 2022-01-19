@@ -1,3 +1,3 @@
 #!/bin/bash
 
-gcc bfbf.c bloom.c -o bfbf -fopenmp -lm 
+gcc bfbf.c bloom/src/bloom.c -o bfbf -fopenmp -lm 

@@ -2,7 +2,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <math.h>
-#include "bloom.h"
+#include "bloom/src/bloom.h"
 
 #define DATA_SIZE 16
 #define DATA_SIZE_CHAR 32

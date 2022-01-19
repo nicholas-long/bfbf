@@ -2,6 +2,7 @@ tags
 bfbf
 bfbf_sha1
 data/*
+tests/data/*
 
 # Prerequisites
 *.d

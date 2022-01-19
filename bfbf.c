@@ -45,11 +45,8 @@ int main(int argc, char** argv){
 
 size_t getlinehex(char* hexdata, char* line){
   size_t length = strlen(line) - 1;
-  // printf("Length %u\n", (uint32_t)length);
   for (size_t i = 0; i < length; i += 2){
-    // printf("Chars %c %c\n", line[i], line[i + 1]);
     hexdata[i / 2] = (unhex(line[i]) << 4) + unhex(line[i + 1]);
-    // printf("%x\n", (unsigned char)hexdata[i/2]);
   }
   return length / 2;
 }
@@ -57,18 +54,12 @@ size_t getlinehex(char* hexdata, char* line){
 // This hash function returns a set of hashes from the bytes passed in 'bytes'.
 // Therefore, it should really only be used for things that are hashes.
 uint64_t* hashfunction_simple_bytes(int num_hashes, const char *bytes){
-  // printf("hashfunction_simple_bytes %d %p", num_hashes, bytes);
-  // uint64_t* hashes = malloc(sizeof(uint64_t) * num_hashes);
   uint64_t* hashes = calloc(num_hashes, sizeof(uint64_t));
-
   int n = 0;
   for (int i = (int)(DATA_SIZE - sizeof(uint64_t)); i >= 0 && n <= num_hashes; i--){
     // convert the bytes at this postion directly into a hash
     hashes[n++] = *(uint64_t*)(bytes + i); 
   }
-  // for (int i = 0; i < n; i++){
-    // printf("%p\n", (void*)hashes[i]);
-  // }
   return hashes;
 }
 
@@ -105,14 +96,11 @@ int addhashes(){
   while ((nread = getline(&line, &len, stdin)) != -1) {
     getlinehex(hexdata, line);
     BloomFilter* bf = get_filter_for(line);
-    bloom_filter_add_string(bf, hexdata);
-    // saving is handled by this library
+    bloom_filter_add_string(bf, hexdata); // saving is handled by this library
     // TODO: could keep it open if it's the same partition next time
     bloom_filter_destroy(bf);
     free(bf);
   }
-  // bloom_filter_stats(&bf);
-  // bloom_filter_destroy(&bf);
 }
 
 int queryhashes(){
@@ -124,7 +112,6 @@ int queryhashes(){
     getlinehex(hexdata, line);
     hexdata[DATA_SIZE_CHAR] = 0;
     BloomFilter* bf = get_filter_for(line);
-    // bloom_filter_stats(bf);
     if (bloom_filter_check_string(bf, hexdata) == BLOOM_FAILURE){
       printf("N\n");
     } else {
@@ -133,12 +120,6 @@ int queryhashes(){
     // TODO: could keep it open if it's the same partition next time
     bloom_filter_destroy(bf);
     free(bf);
-    //
-    // uint64_t* hashes = hashfunction_simple_bytes(9, hexdata);
-    // for (int n = 0; n < 9; n++){
-      // printf("%p\n", (void*)hashes[n]);
-    // }
-    // nread = length; //
   }
   return 0;
 }

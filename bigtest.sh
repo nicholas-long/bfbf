@@ -1,23 +1,28 @@
 #!/bin/bash
 
+echo Initializing
 ./build.sh
 rm data/*
 ./bfbf -i
+echo Done
 
-split=500
+split=50000
 
-hash="fde5f29a4ff67cd1439428c865274637"
-hash2="abe5f29a4ff67cd1439428c865274637"
+date
 echo Adding
-head -n $split testdata.lst | ./bfbf -a
+head -n $split big_dataset.lst | ./bfbf -a
 
+date
 echo Querying contained: Should print Y for all
-head -n $split testdata.lst | ./bfbf -q
+head -n $split big_dataset.lst | ./bfbf -q | grep N
 
+date
 echo Querying not contained: Should print N for most
-tail -n +$(($split + 1)) testdata.lst | ./bfbf -q
+tail -n +$(($split + 1)) big_dataset.lst | ./bfbf -q | grep Y
+
+date
 
 # bottom part
-# tail -n +$(($split + 1)) testdata.lst
+# tail -n +$(($split + 1)) big_dataset.lst
 # top part
-# head -n $split testdata.lst
+# head -n $split big_dataset.lst

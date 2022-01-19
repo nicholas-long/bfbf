@@ -70,9 +70,11 @@ uint64_t* hashfunction_simple_bytes(int num_hashes, const char *bytes){
 }
 
 BloomFilter* get_filter_for(const char * text){
+  const char * charset = CHARSET;
   BloomFilter* filt = (BloomFilter*)malloc(sizeof(BloomFilter));
+  memset(filt, 0, sizeof(BloomFilter));
   char filename[100];
-  sprintf(filename, "data/%c%c", text[0], text[1]);
+  sprintf(filename, "data/%c%c", charset[unhex(text[START_TEXT_PARTITION_OFFSET])], charset[unhex(text[START_TEXT_PARTITION_OFFSET + 1])]);
   // printf("File name %s\n", filename);
   bloom_filter_import_on_disk_alt(filt, filename, &hashfunction_simple_bytes);
   return filt;
@@ -85,6 +87,7 @@ int init(){
       char filename[100];
       sprintf(filename, "data/%c%c", charset[i], charset[j]);
       BloomFilter* filt = (BloomFilter*)malloc(sizeof(BloomFilter));
+      memset(filt, 0, sizeof(BloomFilter));
       bloom_filter_init_on_disk_alt(filt, ESTIMATED_ELEMENTS, 0.05f, filename, &hashfunction_simple_bytes);
     }
   }
@@ -101,14 +104,10 @@ int addhashes(){
     BloomFilter* bf = get_filter_for(line);
     bloom_filter_add_string(bf, hexdata);
     // saving is handled by this library
+    // TODO: could keep it open if it's the same partition next time
+    // bloom_filter_destroy(bf);
     free(bf);
   }
-  // bloom_filter_add_string(&bf, "test");
-  // if (bloom_filter_check_string(&bf, "test") == BLOOM_FAILURE) {
-      // printf("'test' is not in the Bloom Filter\n");
-  // } else {
-      // printf("'test' is in the Bloom Filter\n");
-  // }
   // bloom_filter_stats(&bf);
   // bloom_filter_destroy(&bf);
 }
@@ -126,6 +125,8 @@ int queryhashes(){
     } else {
       puts("Y\n");
     }
+    // TODO: could keep it open if it's the same partition next time
+    bloom_filter_destroy(bf);
     free(bf);
     // uint64_t* hashes = hashfunction_simple_bytes(9, hexdata);
     // for (int n = 0; n < 9; n++){
@@ -163,5 +164,7 @@ int unhex(char digit){
     case 'E':
     case 'F':
       return digit - 'A' + 10;
+    default:
+      return -1;
   }
 }

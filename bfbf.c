@@ -113,12 +113,13 @@ int queryhashes(){
   size_t len = 0;
   ssize_t nread;
   while ((nread = getline(&line, &len, stdin)) != -1) {
+    if (line[DATA_SIZE_CHAR] == '\x0a')  line[DATA_SIZE_CHAR] = 0;
     getlinehex(hexdata, line);
     BloomFilter* bf = get_filter_for(line);
     if (bloom_filter_check_string(bf, hexdata) == BLOOM_FAILURE){
-      printf("N\n");
+      printf("%s:N\n", line);
     } else {
-      printf("Y\n");
+      printf("%s:Y\n", line);
     }
     // TODO: could keep it open if it's the same partition next time
     bloom_filter_destroy(bf);

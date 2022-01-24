@@ -60,8 +60,9 @@ size_t getlinehex(char* hexdata, char* line){
 // Therefore, it should really only be used for things that are hashes.
 uint64_t* hashfunction_simple_bytes(int num_hashes, const char *bytes){
   uint64_t* hashes = calloc(num_hashes, sizeof(uint64_t));
+  int step = (int)(DATA_SIZE - sizeof(uint64_t));
   int n = 0;
-  for (int i = (int)(DATA_SIZE - sizeof(uint64_t)); i >= 0 && n <= num_hashes; i--){
+  for (int i = (int)(DATA_SIZE - sizeof(uint64_t)); i >= 0 && n <= num_hashes; i -= step){
     // convert the bytes at this postion directly into a hash
     hashes[n++] = *(uint64_t*)(bytes + i); 
   }

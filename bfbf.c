@@ -1,7 +1,7 @@
 // PARAMETERIZED BUILD
-// #ifndef DATA_SIZE_CHAR
-// #define DATA_SIZE_CHAR 32
-// #endif
+#ifndef DATA_SIZE_CHAR
+#define DATA_SIZE_CHAR 32
+#endif
 
 #include <stdio.h>
 #include <string.h>
@@ -98,6 +98,8 @@ int addhashes(){
   size_t len = 0;
   ssize_t nread;
   while ((nread = getline(&line, &len, stdin)) != -1) {
+    printf("Added hash %s\n", line);
+    fflush(stdout);
     getlinehex(hexdata, line);
     BloomFilter* bf = get_filter_for(line);
     bloom_filter_add_string(bf, hexdata); // saving is handled by this library
@@ -105,6 +107,7 @@ int addhashes(){
     bloom_filter_destroy(bf);
     free(bf);
   }
+  return 0;
 }
 
 int queryhashes(){
@@ -121,6 +124,7 @@ int queryhashes(){
     } else {
       printf("%s:Y\n", line);
     }
+    fflush(stdout);
     // TODO: could keep it open if it's the same partition next time
     bloom_filter_destroy(bf);
     free(bf);

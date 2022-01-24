@@ -99,8 +99,8 @@ int addhashes(){
   size_t len = 0;
   ssize_t nread;
   while ((nread = getline(&line, &len, stdin)) != -1) {
-    printf("Added hash %s\n", line);
-    fflush(stdout);
+    //printf("Added hash %s\n", line);
+    //fflush(stdout);
     getlinehex(hexdata, line);
     BloomFilter* bf = get_filter_for(line);
     bloom_filter_add_string(bf, hexdata); // saving is handled by this library
